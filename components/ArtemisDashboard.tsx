@@ -376,17 +376,47 @@ export default function ArtemisDashboard() {
         </section>
 
         <footer className="border-t border-zinc-800 pt-6 text-xs text-zinc-600">
-          Datos:{" "}
-          <a
-            className="text-sky-500 hover:underline"
-            href="https://ssd.jpl.nasa.gov/api/horizons.api"
-            target="_blank"
-            rel="noreferrer"
-          >
-            NASA/JPL Horizons API
-          </a>
-          . Uso educativo; tiempos MET y hitos según planificación de misión
-          publicada.
+          <p className="mb-3 text-zinc-500">
+            Hecho con{" "}
+            <span
+              className="text-rose-400/90"
+              role="img"
+              aria-label="amor"
+            >
+              ❤️
+            </span>{" "}
+            por{" "}
+            <a
+              className="font-medium text-sky-400 hover:text-sky-300 hover:underline"
+              href="https://mailermartinez.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Mailer Martinez
+            </a>
+            <span className="text-zinc-600"> · </span>
+            <a
+              className="text-sky-500/90 hover:text-sky-400 hover:underline"
+              href="https://mailermartinez.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              mailermartinez.com
+            </a>
+          </p>
+          <p>
+            Datos:{" "}
+            <a
+              className="text-sky-500 hover:underline"
+              href="https://ssd.jpl.nasa.gov/api/horizons.api"
+              target="_blank"
+              rel="noreferrer"
+            >
+              NASA/JPL Horizons API
+            </a>
+            . Uso educativo; tiempos MET y hitos según planificación de misión
+            publicada.
+          </p>
         </footer>
       </div>
     </div>
