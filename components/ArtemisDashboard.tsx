@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { OrbitSvg } from "@/components/OrbitSvg";
+import { OrbitScene3D } from "@/components/OrbitScene3D";
 import type { EphemerisApiResponse } from "@/lib/ephemeris-types";
 import {
   HORIZONS_DEFAULT_START,
@@ -125,6 +125,18 @@ export default function ArtemisDashboard() {
   const vizMoonKm =
     atPlayhead?.moonKm ?? lastSample?.moonKm ?? { x: 0, y: 0, z: 0 };
 
+  const trajectoryKm = useMemo(
+    () => data?.samples.map((s) => s.orionKm) ?? [],
+    [data]
+  );
+
+  /** Luna en la muestra central: encuadre 3D estable al usar el slider (no recalcula el foco). */
+  const moonKmForBounds = useMemo(() => {
+    const s = data?.samples;
+    if (!s?.length) return { x: 0, y: 0, z: 0 };
+    return s[Math.floor(s.length / 2)]!.moonKm;
+  }, [data]);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10">
@@ -197,69 +209,85 @@ export default function ArtemisDashboard() {
 
         <section className="flex flex-col gap-8">
           <div className="flex w-full flex-col gap-4">
-            <OrbitSvg
+            <OrbitScene3D
               orionKm={vizOrionKm}
               moonKm={vizMoonKm}
-              trajectoryKm={data?.samples.map((s) => s.orionKm) ?? []}
-            />
-
-            {data?.samples.length && jdBounds ? (
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 px-4 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Recorrer trayectoria
-                    </p>
-                    <p className="mt-1 font-mono text-sm text-sky-200">
-                      {formatUtcFromJd(jdPlayhead ?? jdBounds.min)}
-                    </p>
-                    <p className="mt-0.5 text-xs text-zinc-500">
-                      {followRealTime
-                        ? "Siguiendo hora UTC del navegador (dentro del intervalo se interpola)."
-                        : "Arrastra el control para ver Orion y la Luna en otro instante del intervalo cargado."}
-                    </p>
+              moonKmForBounds={moonKmForBounds}
+              trajectoryKm={trajectoryKm}
+            >
+              {data?.samples.length && jdBounds ? (
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div>
+                      <p className="text-sm font-semibold tracking-wide text-violet-300">
+                        Línea de tiempo · recorre la misión
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                        <span className="font-medium text-violet-200/90">
+                          Prueba el control de abajo:
+                        </span>{" "}
+                        mueve el instante del intervalo cargado; Orion y la Luna se
+                        actualizan en 3D y{" "}
+                        <span className="text-zinc-300">
+                          la cámara mantiene el ángulo que hayas elegido
+                        </span>{" "}
+                        (orbita con el ratón y luego arrastra el slider).
+                      </p>
+                      <p className="mt-2 font-mono text-sm text-sky-300">
+                        {formatUtcFromJd(jdPlayhead ?? jdBounds.min)}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-zinc-500">
+                        {followRealTime
+                          ? "Modo: hora UTC del navegador (interpolado en el intervalo)."
+                          : "Modo: instante manual — vuelve al reloj con el botón."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={followRealTime}
+                      onClick={() => setFollowRealTime(true)}
+                      className="shrink-0 rounded-xl border border-sky-600/70 bg-sky-950/70 px-4 py-2.5 text-sm font-medium text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.12)] transition hover:border-sky-500 hover:bg-sky-900/70 disabled:pointer-events-none disabled:opacity-35"
+                    >
+                      Seguir tiempo UTC
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    disabled={followRealTime}
-                    onClick={() => setFollowRealTime(true)}
-                    className="shrink-0 rounded-xl border border-sky-700/80 bg-sky-950/60 px-4 py-2 text-sm font-medium text-sky-200 transition hover:bg-sky-900/60 disabled:pointer-events-none disabled:opacity-40"
-                  >
-                    Seguir tiempo UTC
-                  </button>
+                  <label className="block rounded-xl border border-violet-500/25 bg-zinc-900/60 px-3 py-3">
+                    <span className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-violet-400/90">
+                      Instante en la ephemeris (arrastra)
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={SLIDER_STEPS}
+                      step={1}
+                      value={Math.round(sliderT * SLIDER_STEPS)}
+                      onChange={(e) => {
+                        setFollowRealTime(false);
+                        setScrubT(Number(e.target.value) / SLIDER_STEPS);
+                      }}
+                      className="h-3 w-full cursor-pointer appearance-none rounded-full bg-zinc-800/90 accent-violet-500 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-violet-200/80 [&::-webkit-slider-thumb]:bg-violet-500 [&::-webkit-slider-thumb]:shadow-[0_0_14px_rgba(167,139,250,0.55)] active:[&::-webkit-slider-thumb]:cursor-grabbing"
+                      aria-valuemin={0}
+                      aria-valuemax={SLIDER_STEPS}
+                      aria-valuenow={Math.round(sliderT * SLIDER_STEPS)}
+                      aria-label="Instante en la trayectoria (intervalo de muestras Horizons)"
+                    />
+                    <div className="mt-2 flex justify-between font-mono text-[10px] text-zinc-500">
+                      <span>Inicio muestras</span>
+                      <span>Fin muestras</span>
+                    </div>
+                  </label>
                 </div>
-                <label className="mt-4 block">
-                  <span className="sr-only">Instante en el intervalo de ephemeris</span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={SLIDER_STEPS}
-                    step={1}
-                    value={Math.round(sliderT * SLIDER_STEPS)}
-                    onChange={(e) => {
-                      setFollowRealTime(false);
-                      setScrubT(Number(e.target.value) / SLIDER_STEPS);
-                    }}
-                    className="mt-2 h-2 w-full cursor-pointer appearance-none rounded-full bg-zinc-800 accent-violet-500 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-400 [&::-webkit-slider-thumb]:shadow-md active:[&::-webkit-slider-thumb]:cursor-grabbing"
-                    aria-valuemin={0}
-                    aria-valuemax={SLIDER_STEPS}
-                    aria-valuenow={Math.round(sliderT * SLIDER_STEPS)}
-                    aria-label="Instante en la trayectoria (intervalo de muestras Horizons)"
-                  />
-                </label>
-                <div className="mt-2 flex justify-between font-mono text-[10px] text-zinc-600">
-                  <span>Inicio muestras</span>
-                  <span>Fin muestras</span>
-                </div>
-              </div>
-            ) : null}
+              ) : null}
+            </OrbitScene3D>
 
             <p className="text-xs text-zinc-500">
-              Vista panorámica en el plano X–Y (km, eclíptica J2000). Trayectoria en
-              violeta: Orion en el intervalo. Texturas:{" "}
-              <code className="text-zinc-400">/textures/earth.jpg</code>,{" "}
-              <code className="text-zinc-400">/textures/moon.jpg</code>,{" "}
-              <code className="text-zinc-400">/textures/orion.jpg</code>.
+              Vista 3D (Three.js): eclíptica J2000 respecto al centro Tierra; plano
+              eclíptico en horizontal (X/Z) y componente fuera del plano en Y. Trayectoria
+              violeta. Texturas{" "}
+              <code className="text-zinc-400">/textures/earth.jpg</code> y{" "}
+              <code className="text-zinc-400">/textures/moon.jpg</code>; Orion es un modelo
+              geométrico procedural (sin textura). Arrastra con el ratón para orbitar la
+              cámara.
             </p>
           </div>
 
