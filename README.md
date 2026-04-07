@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Artemis · trayectoria Orion
 
-## Getting Started
+Aplicación web que **visualiza la misión Artemis II** usando **ephemeris geométricas** de la NASA: posiciones de **Orion** (−1024) y de la **Luna** (301) respecto al **centro de la Tierra**, en marco **eclíptico J2000**, obtenidas con la **API JPL Horizons**.
 
-First, run the development server:
+Sirve como panel de práctica: telemetría derivada (altitud, distancia a la Luna, velocidad), **reloj MET** respecto al lanzamiento nominal, progreso de la ventana de misión y **dos vistas orbitales** (SVG panorámica y escena 3D interactiva) con control de tiempo (hora del navegador o slider sobre el intervalo cargado).
+
+## Tecnologías
+
+| Área | Stack |
+|------|--------|
+| Framework | [Next.js](https://nextjs.org) 16 (App Router) |
+| UI | [React](https://react.dev) 19, [TypeScript](https://www.typescriptlang.org) |
+| Estilos | [Tailwind CSS](https://tailwindcss.com) 4 |
+| 3D | [Three.js](https://threejs.org), [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction), [@react-three/drei](https://github.com/pmndrs/drei) |
+| Datos | Ruta API propia (`/api/horizons`) que consulta `https://ssd.jpl.nasa.gov/api/horizons.api` |
+
+## Requisitos
+
+- Node.js compatible con Next.js 16 (recomendado: LTS actual)
+- Red para la primera carga de ephemeris (caché `revalidate` en la ruta API)
+
+## Desarrollo
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Otros scripts: `npm run build`, `npm run start`, `npm run lint`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Estructura relevante
 
-## Learn More
+- `app/page.tsx` — entrada: `ArtemisDashboard`
+- `app/api/horizons/route.ts` — agrega Orion + Luna por JD y expone JSON tipado
+- `components/ArtemisDashboard.tsx` — panel, MET, slider de tiempo
+- `components/OrbitScene3D.tsx` — visor 3D (texturas Tierra/Luna, trayectoria, OrbitControls)
+- `components/OrbitSvg.tsx` — vista 2D tipo diagrama de misión
+- `lib/` — parsing Horizons, interpolación por JD, MET, utilidades
 
-To learn more about Next.js, take a look at the following resources:
+## Nota sobre los datos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Las posiciones son **geométricas** (sin aberración estelar) y el intervalo **START / STOP / STEP** lo eliges en el panel; Horizons puede devolver **cero puntos** si el rango cae antes de que el objeto tenga ephemeris disponible (el código documenta el caso típico post‑ICPS para Orion).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Licencia y créditos
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ephemeris y servicio: **NASA/JPL Horizons**. Este repositorio es un proyecto de práctica; no está afiliado a la NASA.
