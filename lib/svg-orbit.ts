@@ -1,4 +1,7 @@
-/** Proyección plano X–Y (km, eclíptica J2000) → coordenadas SVG. */
+/**
+ * Proyección de posiciones eclípticas J2000 (km) a coordenadas SVG.
+ * Cada vista 2D usa solo **dos** componentes; la tercera es perpendicular al plano dibujado.
+ */
 
 export type BoundsKm = {
   minX: number;
@@ -8,6 +11,24 @@ export type BoundsKm = {
 };
 
 type Vec2 = { x: number; y: number };
+
+export type Vec3Km = { x: number; y: number; z: number };
+
+/** Plano de la proyección: qué par de ejes eclípticos forman los ejes horizontal/vertical del SVG. */
+export type EclipticPlane = "xy" | "xz" | "yz";
+
+function pickPlane(p: Vec3Km, plane: EclipticPlane): Vec2 {
+  switch (plane) {
+    case "xy":
+      return { x: p.x, y: p.y };
+    case "xz":
+      return { x: p.x, y: p.z };
+    case "yz":
+      return { x: p.y, y: p.z };
+    default:
+      return { x: p.x, y: p.y };
+  }
+}
 
 /**
  * Rango mínimo por eje (km) para trayectorias cislunares: evita colapso cuando hay
@@ -70,6 +91,23 @@ export function boundsFromTrajectory(
     moonKm,
     orionKm,
     { x: 0, y: 0 },
+  ];
+  return expandBounds(pts);
+}
+
+/** Límites para un plano eclíptico concreto (p. ej. X–Z para ver inclinación fuera del plano X–Y). */
+export function boundsFromTrajectory3D(
+  trajectoryKm: Vec3Km[],
+  moonKm: Vec3Km,
+  orionKm: Vec3Km,
+  plane: EclipticPlane
+): BoundsKm {
+  const origin2 = pickPlane({ x: 0, y: 0, z: 0 }, plane);
+  const pts = [
+    ...trajectoryKm.map((p) => pickPlane(p, plane)),
+    pickPlane(moonKm, plane),
+    pickPlane(orionKm, plane),
+    origin2,
   ];
   return expandBounds(pts);
 }

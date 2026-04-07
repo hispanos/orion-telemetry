@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { OrbitScene3D } from "@/components/OrbitScene3D";
+import { OrbitSvg } from "@/components/OrbitSvg";
 import type { EphemerisApiResponse } from "@/lib/ephemeris-types";
 import {
   HORIZONS_DEFAULT_START,
@@ -292,14 +293,29 @@ export default function ArtemisDashboard() {
             </OrbitScene3D>
 
             <p className="text-xs text-zinc-500">
-              Vista 3D (Three.js): eclíptica J2000 respecto al centro Tierra; plano
-              eclíptico en horizontal (X/Z) y componente fuera del plano en Y. Trayectoria
-              violeta. Texturas{" "}
+              Vista 3D (Three.js): las tres componentes eclípticas (x, y, z) en km se
+              mapean a la escena como (x, z, y) respecto a ejes eclípticos: el
+              &quot;suelo&quot; del anillo corresponde a z eclíptico ≈ 0. Si los cuerpos
+              parecen casi alineados, suele ser el ángulo de cámara y órbitas cerca del
+              plano eclíptico, no datos incompletos. Trayectoria violeta. Texturas{" "}
               <code className="text-zinc-400">/textures/earth.jpg</code> y{" "}
               <code className="text-zinc-400">/textures/moon.jpg</code>; Orion es un modelo
               geométrico procedural (sin textura). Arrastra con el ratón para orbitar la
               cámara.
             </p>
+
+            {trajectoryKm.length >= 2 ? (
+              <div className="flex flex-col gap-2">
+                <h2 className="text-sm font-semibold text-zinc-200">
+                  Diagrama 2D (proyección)
+                </h2>
+                <OrbitSvg
+                  orionKm={vizOrionKm}
+                  moonKm={vizMoonKm}
+                  trajectoryKm={trajectoryKm}
+                />
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
