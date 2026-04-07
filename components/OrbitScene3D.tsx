@@ -39,6 +39,37 @@ function distKm(a: VecKm, b: VecKm): number {
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+/**
+ * Polilínea hasta el instante `playheadJd`: muestras hasta el segmento activo + posición
+ * interpolada de Orion (coincide con el slider / reloj).
+ */
+function trailLinePointsToPlayhead(
+  trajectoryKm: VecKm[],
+  sampleJds: number[],
+  playheadJd: number,
+  orionKm: VecKm,
+  invS: number
+): THREE.Vector3[] {
+  const n = trajectoryKm.length;
+  if (n === 0) return [];
+  if (n === 1) return [kmToThree(trajectoryKm[0]!, invS)];
+  if (sampleJds.length !== n) {
+    return trajectoryKm.map((p) => kmToThree(p, invS));
+  }
+
+  let seg = 0;
+  while (seg < n - 1 && sampleJds[seg + 1]! <= playheadJd) seg++;
+
+  const pts: THREE.Vector3[] = [];
+  for (let k = 0; k <= seg; k++) {
+    pts.push(kmToThree(trajectoryKm[k]!, invS));
+  }
+  if (seg < n - 1) {
+    pts.push(kmToThree(orionKm, invS));
+  }
+  return pts;
+}
+
 function useTrajectoryScaleKm(trajectoryKm: VecKm[]): number {
   return useMemo(() => {
     let maxR = 0;
@@ -260,11 +291,16 @@ function SceneBody({
   moonKm,
   moonKmForBounds,
   trajectoryKm,
+  playheadJd,
+  sampleJds,
 }: {
   orionKm: VecKm;
   moonKm: VecKm;
   moonKmForBounds: VecKm;
   trajectoryKm: VecKm[];
+  /** Con {@link sampleJds}, recorta la línea violeta hasta el instante del slider/reloj. */
+  playheadJd: number | null;
+  sampleJds: number[];
 }) {
   const scaleKm = useTrajectoryScaleKm(trajectoryKm);
   const invS = 1 / scaleKm;
@@ -273,6 +309,23 @@ function SceneBody({
     () => trajectoryKm.map((p) => kmToThree(p, invS)),
     [trajectoryKm, invS]
   );
+
+  const visibleTrailPts = useMemo(() => {
+    if (
+      playheadJd == null ||
+      trajectoryKm.length < 2 ||
+      sampleJds.length !== trajectoryKm.length
+    ) {
+      return trajectoryKm.map((p) => kmToThree(p, invS));
+    }
+    return trailLinePointsToPlayhead(
+      trajectoryKm,
+      sampleJds,
+      playheadJd,
+      orionKm,
+      invS
+    );
+  }, [trajectoryKm, sampleJds, playheadJd, orionKm, invS]);
 
   const moonPos = useMemo(() => kmToThree(moonKm, invS), [moonKm, invS]);
   const moonPosBounds = useMemo(
@@ -476,16 +529,16 @@ function SceneBody({
         </span>
       </Html>
 
-      {linePts.length >= 2 ? (
+      {visibleTrailPts.length >= 2 ? (
         <>
           <Line
-            points={linePts}
+            points={visibleTrailPts}
             color={TRAIL_UNDER}
             lineWidth={12}
             transparent
             opacity={0.4}
           />
-          <Line points={linePts} color={TRAIL_MAIN} lineWidth={4.8} />
+          <Line points={visibleTrailPts} color={TRAIL_MAIN} lineWidth={4.8} />
         </>
       ) : null}
 
@@ -526,6 +579,8 @@ export function OrbitScene3D({
   moonKm,
   moonKmForBounds,
   trajectoryKm,
+  playheadJd = null,
+  sampleJds = [],
   children,
 }: {
   orionKm: VecKm;
@@ -533,6 +588,10 @@ export function OrbitScene3D({
   /** Luna representativa para encuadre (p. ej. muestra central); estable al mover el slider. */
   moonKmForBounds: VecKm;
   trajectoryKm: VecKm[];
+  /** JD del instante mostrado (misma escala que muestras Horizons). Con `sampleJds` recorta el trazo. */
+  playheadJd?: number | null;
+  /** Un JD por punto de `trajectoryKm` (mismo orden). */
+  sampleJds?: number[];
   /** Panel inferior (p. ej. control de tiempo) dentro del mismo marco que el Canvas. */
   children?: ReactNode;
 }) {
@@ -554,6 +613,8 @@ export function OrbitScene3D({
               moonKm={moonKm}
               moonKmForBounds={moonKmForBounds}
               trajectoryKm={trajectoryKm}
+              playheadJd={playheadJd}
+              sampleJds={sampleJds}
             />
           </Suspense>
         </Canvas>

@@ -1,5 +1,5 @@
-/** Artemis II — lanzamiento oficial (UTC) según Horizons / NASA. */
-export const ARTEMIS_II_LAUNCH_UTC = new Date("2026-04-01T22:35:12.000Z");
+/** Artemis II — lanzamiento nominal (UTC). */
+export const ARTEMIS_II_LAUNCH_UTC = new Date("2026-04-01T22:24:00.000Z");
 
 /** Duración nominal de la misión (10 días). */
 export const MISSION_NOMINAL_DAYS = 10;

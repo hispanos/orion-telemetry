@@ -19,10 +19,14 @@ import {
 import { ARTEMIS_II_MILESTONES, isMilestoneComplete } from "@/lib/milestones";
 import type { EphemerisApiSample } from "@/lib/ephemeris-types";
 
+/** Distancias siempre en kilómetros (sufijo explícito). */
 function formatKm(km: number): string {
   if (!Number.isFinite(km)) return "—";
-  if (Math.abs(km) >= 1e6) return `${(km / 1e6).toFixed(3)} millones km`;
-  if (Math.abs(km) >= 1000) return `${(km / 1000).toFixed(3)} miles km`;
+  const abs = Math.abs(km);
+  if (abs >= 1e6) return `${(km / 1e6).toFixed(3)} millones de km`;
+  if (abs >= 1000) {
+    return `${km.toLocaleString("es", { maximumFractionDigits: 2 })} km`;
+  }
   return `${km.toFixed(1)} km`;
 }
 
@@ -130,6 +134,11 @@ export default function ArtemisDashboard() {
     [data]
   );
 
+  const sampleJds = useMemo(
+    () => data?.samples.map((s) => s.jd) ?? [],
+    [data]
+  );
+
   /** Luna en la muestra central: encuadre 3D estable al usar el slider (no recalcula el foco). */
   const moonKmForBounds = useMemo(() => {
     const s = data?.samples;
@@ -152,7 +161,7 @@ export default function ArtemisDashboard() {
             centro de la Tierra. Altitud = |r| − radio ecuatorio tomado de la
             respuesta Horizons. MET desde lanzamiento{" "}
             <time dateTime={ARTEMIS_II_LAUNCH_UTC.toISOString()}>
-              1 abr 2026, 22:35:12 UTC
+              1 de abril de 2026, 22:24 UTC
             </time>
             .
           </p>
@@ -214,6 +223,8 @@ export default function ArtemisDashboard() {
               moonKm={vizMoonKm}
               moonKmForBounds={moonKmForBounds}
               trajectoryKm={trajectoryKm}
+              playheadJd={jdPlayhead}
+              sampleJds={sampleJds}
             >
               {data?.samples.length && jdBounds ? (
                 <div className="space-y-3">

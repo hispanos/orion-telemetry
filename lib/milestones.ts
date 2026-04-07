@@ -10,12 +10,12 @@ export const ARTEMIS_II_MILESTONES: Milestone[] = [
   {
     id: "launch",
     label: "Lanzamiento (LC-39B)",
-    occursAtUtc: "2026-04-01T22:35:12.000Z",
+    occursAtUtc: "2026-04-01T22:24:00.000Z",
   },
   {
     id: "solar_arrays",
     label: "Despliegue de paneles solares",
-    occursAtUtc: "2026-04-01T22:55:00.000Z",
+    occursAtUtc: "2026-04-01T22:44:00.000Z",
   },
   {
     id: "tli",
